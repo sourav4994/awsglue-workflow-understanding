@@ -1,0 +1,1 @@
+In Glue Workflows, “static” vs “dynamic” views are just two ways of visualizing and understanding your pipeline—not two different execution modes.
