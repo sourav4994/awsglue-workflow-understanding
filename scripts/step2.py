@@ -55,41 +55,43 @@ print(f"Files to process: {len(file_list)}")
 # -----------------------------
 # STEP 2: Exit if no files
 # -----------------------------
+
 if not file_list:
     print("No new files. Skipping processing.")
-    sys.exit(0)
-
+else:
+    # df = spark.read.option("header", True).csv(file_list)
+    # rest of logic
 # -----------------------------
 # STEP 3: Read data
 # -----------------------------
-df = spark.read.option("header", True).csv(file_list)
+    df = spark.read.option("header", True).csv(file_list)
 
-# -----------------------------
-# STEP 4: Standardize schema
-# -----------------------------
-df = df.toDF(*[c.lower() for c in df.columns])
+    # -----------------------------
+    # STEP 4: Standardize schema
+    # -----------------------------
+    df = df.toDF(*[c.lower() for c in df.columns])
 
-df = df.withColumnRenamed("custid", "customer_id") \
-       .withColumnRenamed("txnamt", "transaction_amount")
+    df = df.withColumnRenamed("custid", "customer_id") \
+        .withColumnRenamed("txnamt", "transaction_amount")
 
-# -----------------------------
-# STEP 5: Data type conversion
-# -----------------------------
-df = df.withColumn("transaction_amount", col("transaction_amount").cast("double")) \
-       .withColumn("quantity", col("quantity").cast("int")) \
-       .withColumn("transaction_timestamp", col("transaction_timestamp").cast("timestamp"))
+    # -----------------------------
+    # STEP 5: Data type conversion
+    # -----------------------------
+    df = df.withColumn("transaction_amount", col("transaction_amount").cast("double")) \
+        .withColumn("quantity", col("quantity").cast("int")) \
+        .withColumn("transaction_timestamp", col("transaction_timestamp").cast("timestamp"))
 
-# -----------------------------
-# STEP 6: Add metadata columns
-# -----------------------------
-df = df.withColumn("batch_id", lit(batch_id)) \
-       .withColumn("process_date", lit(process_date))
+    # -----------------------------
+    # STEP 6: Add metadata columns
+    # -----------------------------
+    df = df.withColumn("batch_id", lit(batch_id)) \
+        .withColumn("process_date", lit(process_date))
 
-# -----------------------------
-# STEP 7: Write output
-# -----------------------------
-df.write.mode("append") \
-  .partitionBy("process_date") \
-  .parquet(TARGET_PATH)
+    # -----------------------------
+    # STEP 7: Write output
+    # -----------------------------
+    df.write.mode("append") \
+    .partitionBy("process_date") \
+    .parquet(TARGET_PATH)
 
-print(f"Data written to {TARGET_PATH}")
+    print(f"Data written to {TARGET_PATH}")
