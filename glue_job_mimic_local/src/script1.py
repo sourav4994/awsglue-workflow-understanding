@@ -1,7 +1,9 @@
 import sys
 import json
 import os
-from datetime import datetime
+from datetime import datetime, UTC
+
+
 
 # -------------------------
 # Load .env (local only)
@@ -29,9 +31,22 @@ except:
 def get_new_files(files, last_processed, job_start_time):
     new_files = []
 
+    last_processed_dt = datetime.fromisoformat(last_processed)
+    job_start_dt = datetime.fromisoformat(job_start_time)
+
     for f in files:
-        if last_processed < f["last_modified"] <= job_start_time:
+        file_dt = datetime.fromisoformat(f["last_modified"])
+
+        print("------ DEBUG ------")
+        print("last_processed:", last_processed_dt)
+        print("file_time     :", file_dt)
+        print("job_start     :", job_start_dt)
+
+        if last_processed_dt < file_dt <= job_start_dt:
+            print("✅ PICKED")
             new_files.append(f["path"])
+        else:
+            print("❌ SKIPPED")
 
     return new_files
 
@@ -39,7 +54,10 @@ def get_new_files(files, last_processed, job_start_time):
 # =========================
 # LOCAL STORAGE
 # =========================
+import zoneinfo
+ist = zoneinfo.ZoneInfo("Asia/Kolkata")
 def list_local_files(folder):
+    print('listing local files in folder:', folder)
     files = []
 
     if not os.path.exists(folder):
@@ -50,12 +68,16 @@ def list_local_files(folder):
 
         files.append({
             "path": full_path,
-            "last_modified": datetime.utcfromtimestamp(
-                os.path.getmtime(full_path)
+            "last_modified": datetime.fromtimestamp(
+                os.path.getmtime(full_path),
+                UTC
             ).isoformat()
         })
+    
+    print(files)
 
     return files
+
 
 
 def read_local_json(path):
@@ -105,7 +127,7 @@ def write_s3_json(s3, bucket, key, data):
 # MAIN RUNNER
 # =========================
 def run(mode="local", config=None):
-    job_start_time = datetime.utcnow().isoformat()
+    job_start_time = datetime.now(UTC).isoformat()
 
     # -----------------------
     # LOCAL MODE
@@ -114,6 +136,8 @@ def run(mode="local", config=None):
         landing = config["landing"]
         watermark_file = config["watermark"]
         batch_folder = config["batch"]
+        metadata_path = config["metadata"]
+
 
         watermark_data = read_local_json(watermark_file)
 
@@ -121,28 +145,55 @@ def run(mode="local", config=None):
             watermark_data["last_processed_time"]
             if watermark_data else "1970-01-01T00:00:00"
         )
+        print('--------lst markup---',last_processed)
 
         files = list_local_files(landing)
+        print(files)
 
         new_files = get_new_files(files, last_processed, job_start_time)
 
-        batch_id = f"batch_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
+        # batch_id = f"batch_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
+        now = datetime.now(UTC)
 
-        metadata = {
+        batch_id = f"batch_{now.strftime('%Y%m%d_%H%M%S')}"
+        process_date = now.strftime("%Y-%m-%d")
+
+        batch_metadata = {
             "batch_id": batch_id,
             "files": new_files,
+            "process_date": process_date,
             "watermark_ts": job_start_time
         }
 
-        metadata_path = f"{batch_folder}/{batch_id}.json"
+        # -----------------------
+        # 5. Write batch file (history)
+        # -----------------------
+        batch_path = f"{batch_folder}/{batch_id}.json"
+        write_local_json(batch_path, batch_metadata)
 
-        write_local_json(metadata_path, metadata)
+        # -----------------------
+        # 6. Update metastore (single file)
+        # -----------------------
+        metastore = {
+        "batch_id": batch_id,
+        "files": new_files,
+        "process_date": process_date,
+        "watermark_ts": job_start_time
+    }
+        print('--------metastore---',metastore)
+        print('--------metadata_path---',metadata_path  )
+        write_local_json(metadata_path, metastore)
+
+        # -----------------------
+        # 7. Update watermark
+        # -----------------------
         write_local_json(
             watermark_file,
             {"last_processed_time": job_start_time}
         )
 
-        print("LOCAL RUN SUCCESS ✅")
+        print("✅ LOCAL RUN SUCCESS")
+        print("Batch created:", batch_path)
         print("New files:", new_files)
 
     # -----------------------
@@ -222,6 +273,7 @@ def main():
             "landing": os.getenv("LANDING_PATH"),
             "watermark": os.getenv("WATERMARK_PATH"),
             "batch": os.getenv("BATCH_PATH"),
+            "metadata": os.getenv("METADATA_PATH")
         }
         run(mode="local", config=config)
 
