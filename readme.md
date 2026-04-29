@@ -71,6 +71,7 @@ Sample content:
   "last_processed_time": "2026-04-29T10:44:54.474872+00:00"
 }
 
+
 Using this timestamp, the job scans the landing path and identifies only the new files (files with timestamp greater than the watermark).
 
 The list of these new files is prepared and passed to the next job (or kept in memory depending on the workflow design).
