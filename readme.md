@@ -1,45 +1,5 @@
-+----------------------+
-|   Source Systems     |
-|        (CSV)         |
-+----------+-----------+
-           |
-           v
-+----------------------+
-|   S3 Landing Zone    |
-|   (Raw Files)        |
-|   /landing/txn/      |
-+----------+-----------+
-           |
-           v
-+-------------------------------------------------------------+
-|                       AWS Glue Job                          |
-|                    (Spark Processing)                       |
-|                                                             |
-|  Metastore (S3):                                            |
-|  /metastore/workflow-1/                                     |
-|     ├── batch/                                              |
-|     |     └── batch1.json (metadata for each run)            |
-|     └── watermarking.json                                   |
-|           (stores last_processed_time, overwrite mode)      |
-+----------+--------------------------------------------------+
-           |
-           v
-      +----+------------------------------------+
-      |                                         |
-      v                                         v
-+----------------------+          +-----------------------------+
-|   Watermark Store    |          |   Output S3 Location        |
-|   (S3 JSON / DB)     |          |   /output/                  |
-|                      |          |   output1.parquet           |
-| Step 1: Read last    |          |   output2.parquet           |
-| processed timestamp  |          |                             |
-| to identify new      |          | Step 2: Write processed     |
-| files                |          | data to output              |
-+----------------------+          +-------------+---------------+
-                                                |
-                                                v
-                                      Workflow Ends
 
+![alt text](image.png)
 # End-to-End Flow Explanation
 
 # 1. Data Ingestion
