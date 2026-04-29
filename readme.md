@@ -1,36 +1,44 @@
-
-                +----------------------+
-                |   Source Systems     |
-                |        (CSV)         |
-                +----------+-----------+
-                           |
-                           v
-                +----------------------+
-                |   S3 Landing Zone    |
-                |  (Raw Files)         |------/landing/txn--input directory
-                +----------+-----------+
-                           |
-                           v                   /metastore/workflow-1/--bucket's common folder
-                +----------------------+      1./batch/btch1..so on  { keep track of metadata about each batch}
-                |  AWS Glue Job        |-----|2-/watermarking.json   {holding last processing time-overright behaviour}
-                |  (Spark Processing)  |      
-                +----------+-----------+
-                           |
-             +--------------+--------------+
-            |                             |
-            v                             v
-+----------------------+     +----------------------+
-| Watermark Store      |     | output S3 Location     |-output/ output1.parquet...so on
-| (S3 JSON / DB)       |     | (job-run-id based)   |
-|                      |     |                      |
-| Step 1: Read last    |     | Step 2: Write        |
-| processed watermark  |     | processed files data |      
-| to identify newfiles |     | to  output location  |
-+----------------------+     +----------+-----------+
-                                         |
-                                         v
-                             workflow ends---
-
++----------------------+
+|   Source Systems     |
+|        (CSV)         |
++----------+-----------+
+           |
+           v
++----------------------+
+|   S3 Landing Zone    |
+|   (Raw Files)        |
+|   /landing/txn/      |
++----------+-----------+
+           |
+           v
++-------------------------------------------------------------+
+|                       AWS Glue Job                          |
+|                    (Spark Processing)                       |
+|                                                             |
+|  Metastore (S3):                                            |
+|  /metastore/workflow-1/                                     |
+|     ├── batch/                                              |
+|     |     └── batch1.json (metadata for each run)            |
+|     └── watermarking.json                                   |
+|           (stores last_processed_time, overwrite mode)      |
++----------+--------------------------------------------------+
+           |
+           v
+      +----+------------------------------------+
+      |                                         |
+      v                                         v
++----------------------+          +-----------------------------+
+|   Watermark Store    |          |   Output S3 Location        |
+|   (S3 JSON / DB)     |          |   /output/                  |
+|                      |          |   output1.parquet           |
+| Step 1: Read last    |          |   output2.parquet           |
+| processed timestamp  |          |                             |
+| to identify new      |          | Step 2: Write processed     |
+| files                |          | data to output              |
++----------------------+          +-------------+---------------+
+                                                |
+                                                v
+                                      Workflow Ends
 
 # End-to-End Flow Explanation
 
