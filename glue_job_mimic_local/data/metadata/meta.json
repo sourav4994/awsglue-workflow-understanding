@@ -1,0 +1,5 @@
+{
+  "files": ["C:/Users/soura/microfrontends/pyspark_setup/awsglue_workflow/glue_job_mimic_local/data/input/txn_20260428_001.csv"],
+  "batch_id": "batch_001",
+  "process_date": "2026-04-28"
+}
