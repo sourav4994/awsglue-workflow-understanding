@@ -62,11 +62,3 @@ After successful completion of Job B, the watermark file is updated with the lat
 
 This ensures that in the next run, only new data will be picked up.
 
-
-docker-compose build   
-docker-compose run spark-app pytest -v
-docker-compose run spark-app pytest --cov=src --cov-report=term --cov-report=html
-
-python src/script1.py
-spark-class org.apache.spark.deploy.history.HistoryServer
-http://localhost:18080
