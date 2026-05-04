@@ -8,7 +8,7 @@ Data arrives from source systems (for example, CSV files) and is stored in the l
 
 Example path:
 
-s3://landing-bucket/workflow-1/txn/
+s3://landing-bucket/workflow/customer-pipline/landing
 # 2. Metadata and Incremental Setup (Job A)
 
 An AWS Glue job (Job A) is responsible for preparing the run.
@@ -17,13 +17,13 @@ First, it creates a batch metadata file for the current execution. This file con
 
 Example:
 
-s3://landing-bucket/metastore/workflow-1/batch/batch.json
+s3://landing-bucket/workflow/customer-pipline/batch/batch*.json
 
 Next, the job reads the watermark file to understand what was processed in the previous run.
 
 Example:
 
-s3://landing-bucket/metastore/workflow-1/watermarking.json
+s3://landing-bucket/workflow/customer-pipline/watermarking.json
 
 Sample content:
 
